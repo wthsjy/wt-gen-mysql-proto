@@ -60,7 +60,7 @@ func main() {
 		if strings.TrimSpace(v.Comment) != "" {
 			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
 		}
-		protoStr += fmt.Sprintf("  %s %s = %d; // @gotags: gorm:\"column:%s\"\n", getProtoType(v.Type), CamelCase(v.Field), index+1, v.Field)
+		protoStr += fmt.Sprintf("  %s %s = %d; // \n// table field:\n// @gotags: gorm:\"column:%s\"\n", getProtoType(v.Type), CamelCase(v.Field), index+1, v.Field)
 	}
 	protoStr += "}"
 
