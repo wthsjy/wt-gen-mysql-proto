@@ -1,4 +1,4 @@
-module wt-gen-mysql-proto
+module github.com/wthsjy/wt-gen-mysql-proto
 
 go 1.17
 
