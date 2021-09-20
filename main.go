@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"io/ioutil"
 	"strings"
+	"time"
 )
 
 type DDLM struct {
@@ -59,24 +61,27 @@ func main() {
 		}
 		if strings.TrimSpace(v.Comment) != "" {
 			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
+			protoStr += fmt.Sprintf("  //\n  // table field:\n  // @gotags: gorm:\"column:%s\"\n", v.Field)
 		}
-		protoStr += fmt.Sprintf("  %s %s = %d; // \n// table field:\n// @gotags: gorm:\"column:%s\"\n", getProtoType(v.Type), CamelCase(v.Field), index+1, v.Field)
+		protoStr += fmt.Sprintf("  %s %s = %d;\n", getProtoType(v.Type), CamelCase(v.Field), index+1)
 	}
 	protoStr += "}"
 
-	fmt.Printf("\n\n")
-	fmt.Println(protoStr)
-	fmt.Printf("\n\n")
-	fmt.Printf("insert into `%s`(%s)values(%s)\n", tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
-	fmt.Printf("delete from `%s` where `%s` in ?\n", tableName, priKeyField)
-	fmt.Printf("select %s from `%s` where `%s` in ?\n", strings.Join(fields, ","), tableName, priKeyField)
+	protoStr += "\n\n"
+	protoStr += fmt.Sprintf("insert into `%s`(%s)values(%s)\n", tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
+	protoStr += fmt.Sprintf("delete from `%s` where `%s` in ?\n", tableName, priKeyField)
+	protoStr += fmt.Sprintf("select %s from `%s` where `%s` in ?\n", strings.Join(fields, ","), tableName, priKeyField)
 
+	fmt.Println(protoStr)
+	ts := time.Now().Unix()
+	fname := fmt.Sprintf("./%s_%d.txt", tableName, ts)
+	_ = ioutil.WriteFile(fname, []byte(protoStr), 0666)
 }
 
 func getDSN() string {
 	dsnfmt := "%s:%s@tcp(%s:%d)/%s"
 	dsn := fmt.Sprintf(dsnfmt, username, password, host, port, dbName)
-	fmt.Println("dsn:", dsn)
+	fmt.Printf("dsn:%s\n\n", dsn)
 	return dsn
 }
 
