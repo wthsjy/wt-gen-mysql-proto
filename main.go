@@ -48,7 +48,7 @@ func main() {
 		panic(err)
 	}
 
-	protoStr := fmt.Sprintf("// 数据库表: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
+	protoStr := fmt.Sprintf("// mysql database.table: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	for index, v := range ddlms {
 		if strings.TrimSpace(v.Comment) != "" {
 			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
