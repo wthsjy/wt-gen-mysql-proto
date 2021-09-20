@@ -1,7 +1,7 @@
 package main
 
-import wtgenmysqlproto "wt-gen-mysql-proto"
+import wt_gen_mysql_proto "github.com/wthsjy/wt-gen-mysql-proto"
 
 func main() {
-	wtgenmysqlproto.Run()
+	wt_gen_mysql_proto.Run()
 }
