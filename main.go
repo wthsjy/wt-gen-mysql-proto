@@ -55,7 +55,7 @@ func main() {
 	structStr := fmt.Sprintf("package dbmodel\n\n// %s mysql database.table: %s.%s\ntype %s struct{\n", FirstUpCase(CamelCase(tableName)), dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	protoStr := "syntax = \"proto3\";\n\n"
 	protoStr += "package wtmicro.pbgen.service.model;\n"
-	protoStr += "option go_package = \"wtmicro/pbgen/service/model;modelpb\";\n"
+	protoStr += "option go_package = \"wtmicro/pbgen/service/model;modelpb\";\n\n"
 	protoStr += fmt.Sprintf("// mysql database.table: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	for index, v := range ddlms {
 		fields = append(fields, fmt.Sprintf("`%s`", v.Field))
