@@ -1,4 +1,4 @@
-package wt_gen_mysql_proto
+package main
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ var (
 	tableName string
 )
 
-func Run() {
+func main() {
 	dsn := getDSN()
 	mDB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
