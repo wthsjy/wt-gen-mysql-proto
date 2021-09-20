@@ -12,6 +12,7 @@ type DDLM struct {
 	Field   string
 	Type    string
 	Comment string
+	Key     string
 }
 
 var (
@@ -48,8 +49,14 @@ func main() {
 		panic(err)
 	}
 
+	var fields []string
+	var priKeyField string
 	protoStr := fmt.Sprintf("// mysql database.table: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	for index, v := range ddlms {
+		fields = append(fields, fmt.Sprintf("`%s`", v.Field))
+		if strings.ToUpper(v.Key) == "PRI" {
+			priKeyField = v.Field
+		}
 		if strings.TrimSpace(v.Comment) != "" {
 			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
 		}
@@ -60,6 +67,10 @@ func main() {
 	fmt.Printf("\n\n")
 	fmt.Println(protoStr)
 	fmt.Printf("\n\n")
+	fmt.Printf("insert into `%s`(%s)values(%s)\n", tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
+	fmt.Printf("delete from `%s` where `%s` in ?\n", tableName, priKeyField)
+	fmt.Printf("select %s from `%s` where `%s` in ?\n", strings.Join(fields, ","), tableName, priKeyField)
+
 }
 
 func getDSN() string {
