@@ -68,10 +68,11 @@ func main() {
 	protoStr += "}"
 
 	protoStr += "\n\n"
-	protoStr += fmt.Sprintf("insert into `%s`(%s)values(%s)\n", tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
-	protoStr += fmt.Sprintf("delete from `%s` where `%s` in ?\n", tableName, priKeyField)
-	protoStr += fmt.Sprintf("select %s from `%s` where `%s` in ?\n", strings.Join(fields, ","), tableName, priKeyField)
-
+	protoStr += "const(\n"
+	protoStr += fmt.Sprintf("sqlAdd%s =\"insert into `%s`(%s)values(%s)\"\n", FirstUpCase(CamelCase(tableName)), tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
+	protoStr += fmt.Sprintf("sqlDel%sByIds =\"delete from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), tableName, priKeyField)
+	protoStr += fmt.Sprintf("sqlGet%sByIds =\"select %s from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), strings.Join(fields, ","), tableName, priKeyField)
+	protoStr += ")"
 	fmt.Println(protoStr)
 	ts := time.Now().Unix()
 	fname := fmt.Sprintf("./%s_%d.txt", tableName, ts)
