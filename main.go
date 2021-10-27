@@ -51,46 +51,42 @@ func main() {
 	}
 
 	var fields []string
-	var priKeyField string
-	structStr := fmt.Sprintf("package dbmodel\n\n// %s mysql database.table: %s.%s\ntype %s struct{\n", FirstUpCase(CamelCase(tableName)), dbName, tableName, FirstUpCase(CamelCase(tableName)))
+	//var priKeyField string
+	//structStr := fmt.Sprintf("package dbmodel\n\n// %s mysql database.table: %s.%s\ntype %s struct{\n", FirstUpCase(CamelCase(tableName)), dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	protoStr := "syntax = \"proto3\";\n\n"
 	protoStr += "package dodo.go.pbgen.service.model;\n"
 	protoStr += "option go_package = \"dodo-go/pbgen/service/model;modelpb\";\n\n"
 	protoStr += fmt.Sprintf("// mysql database.table: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	for index, v := range ddlms {
 		fields = append(fields, fmt.Sprintf("`%s`", v.Field))
-		if strings.ToUpper(v.Key) == "PRI" {
-			priKeyField = v.Field
-		}
+		//if strings.ToUpper(v.Key) == "PRI" {
+		//	priKeyField = v.Field
+		//}
 		if strings.TrimSpace(v.Comment) != "" {
 			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
 		}
 		protoStr += fmt.Sprintf("  //\n  // table field:\n  // @gotags: gorm:\"column:%s\"\n", v.Field)
 		protoStr += fmt.Sprintf("  %s %s = %d;\n", getProtoType(v.Type), CamelCase(v.Field), index+1)
 
-		if strings.TrimSpace(v.Comment) != "" {
-			structStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
-		}
-		structStr += fmt.Sprintf("  %s %s  ", FirstUpCase(CamelCase(v.Field)), getProtoType(v.Type))
-		structStr += fmt.Sprintf("`json:\"%s\" gorm:\"column:%s\"`\n", CamelCase(v.Field), v.Field)
+		//if strings.TrimSpace(v.Comment) != "" {
+		//	structStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
+		//}
+		//structStr += fmt.Sprintf("  %s %s  ", FirstUpCase(CamelCase(v.Field)), getProtoType(v.Type))
+		//structStr += fmt.Sprintf("`json:\"%s\" gorm:\"column:%s\"`\n", CamelCase(v.Field), v.Field)
 	}
 
 	protoStr += "}"
 
-	structStr += "}\n\n"
-	structStr += "const(\n"
-	structStr += fmt.Sprintf("  sqlAdd%s =\"insert into `%s`(%s)values(%s)\"\n", FirstUpCase(CamelCase(tableName)), tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
-	structStr += fmt.Sprintf("  sqlDel%sByIds =\"delete from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), tableName, priKeyField)
-	structStr += fmt.Sprintf("  sqlGet%sByIds =\"select %s from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), strings.Join(fields, ","), tableName, priKeyField)
-	structStr += ")"
+	//structStr += "}\n\n"
+	//structStr += "const(\n"
+	//structStr += fmt.Sprintf("  sqlAdd%s =\"insert into `%s`(%s)values(%s)\"\n", FirstUpCase(CamelCase(tableName)), tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
+	//structStr += fmt.Sprintf("  sqlDel%sByIds =\"delete from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), tableName, priKeyField)
+	//structStr += fmt.Sprintf("  sqlGet%sByIds =\"select %s from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), strings.Join(fields, ","), tableName, priKeyField)
+	//structStr += ")"
 
-	protoFileName := fmt.Sprintf("./%s.model.proto", tableName)
+	protoFileName := fmt.Sprintf("./proto/service/model/%s.model.proto", tableName)
 	_ = ioutil.WriteFile(protoFileName, []byte(protoStr), 0666)
 	fmt.Println("proto:", protoFileName)
-
-	structFileName := fmt.Sprintf("./%s.model.go", tableName)
-	_ = ioutil.WriteFile(structFileName, []byte(structStr), 0666)
-	fmt.Println("struct:", structFileName)
 }
 
 func getDSN() string {
