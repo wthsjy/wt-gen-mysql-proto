@@ -54,8 +54,8 @@ func main() {
 	var priKeyField string
 	structStr := fmt.Sprintf("package dbmodel\n\n// %s mysql database.table: %s.%s\ntype %s struct{\n", FirstUpCase(CamelCase(tableName)), dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	protoStr := "syntax = \"proto3\";\n\n"
-	protoStr += "package wtmicro.pbgen.service.model;\n"
-	protoStr += "option go_package = \"wtmicro/pbgen/service/model;modelpb\";\n\n"
+	protoStr += "package dodo.go.pbgen.service.model;\n"
+	protoStr += "option go_package = \"dodo-go/pbgen/service/model;modelpb\";\n\n"
 	protoStr += fmt.Sprintf("// mysql database.table: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	for index, v := range ddlms {
 		fields = append(fields, fmt.Sprintf("`%s`", v.Field))
@@ -64,8 +64,8 @@ func main() {
 		}
 		if strings.TrimSpace(v.Comment) != "" {
 			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
-			protoStr += fmt.Sprintf("  //\n  // table field:\n  // @gotags: gorm:\"column:%s\"\n", v.Field)
 		}
+		protoStr += fmt.Sprintf("  //\n  // table field:\n  // @gotags: gorm:\"column:%s\"\n", v.Field)
 		protoStr += fmt.Sprintf("  %s %s = %d;\n", getProtoType(v.Type), CamelCase(v.Field), index+1)
 
 		if strings.TrimSpace(v.Comment) != "" {
@@ -152,17 +152,4 @@ func FirstUpCase(s string) string {
 	b := []byte(s)
 	b[0] = c
 	return string(b)
-}
-
-// UserInfo mysql database.table: demo.user_info
-type UserInfo struct {
-	// 用户id
-	UserId uint64 `json:"userId" gorm:"column:user_id"`
-	// 用户昵称
-	UserName string `json:"userName" gorm:"column:user_name"`
-	// 创建时间
-	CreateTime string `json:"createTime" gorm:"column:create_time"`
-	// 更新时间1
-	// 更新时间2
-	UpdateTime string `json:"updateTime" gorm:"column:update_time"`
 }
