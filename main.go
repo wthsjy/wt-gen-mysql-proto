@@ -12,8 +12,9 @@ import (
 type DDLM struct {
 	Field   string
 	Type    string
-	Comment string
+	Null    string
 	Key     string
+	Comment string
 }
 
 var (
@@ -34,7 +35,7 @@ func main() {
 	flag.StringVar(&host, "h", "127.0.0.1", "主机名,默认 127.0.0.1")
 	flag.IntVar(&port, "P", 3306, "端口号")
 	flag.StringVar(&dbName, "d", "demo", "数据库名")
-	flag.StringVar(&tableName, "t", "user_info", "表名")
+	flag.StringVar(&tableName, "t", "admin_account", "表名")
 
 	// 从arguments中解析注册的flag。必须在所有flag都注册好而未访问其值时执行。未注册却使用flag -help时，会返回ErrHelp。
 	flag.Parse()
@@ -71,7 +72,7 @@ func main() {
 		if strings.TrimSpace(v.Comment) != "" {
 			structStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
 		}
-		structStr += fmt.Sprintf("  %s %s  ", FirstUpCase(CamelCase(v.Field)), getProtoType(v.Type))
+		structStr += fmt.Sprintf("  %s %s  ", FirstUpCase(CamelCase(v.Field)), getStructType(v))
 		structStr += fmt.Sprintf("`json:\"%s\" gorm:\"column:%s\"`\n", CamelCase(v.Field), v.Field)
 	}
 
@@ -110,13 +111,47 @@ func getProtoType(s string) string {
 	}
 	if strings.Contains(s, "int") {
 		if strings.Contains(s, "unsigned") {
-			return "uint"
+			return "uint32"
 		} else {
-			return "int"
+			return "int32"
 		}
 	}
-	if strings.Contains(strings.ToLower(s), "datetime") {
+	return "string"
+}
+
+// TODO 完善更多
+func getStructType(s DDLM) string {
+	types := strings.ToLower(s.Type)
+	nullable := strings.ToUpper(s.Null) == "YES"
+	if strings.Contains(types, "bigint") {
+		if nullable {
+			return "sql.NullInt64"
+		}
+		if strings.Contains(types, "unsigned") {
+			return "uint64"
+		} else {
+
+			return "int64"
+		}
+	}
+	if strings.Contains(types, "int") {
+		if nullable {
+			return "sql.NullInt32"
+		}
+		if strings.Contains(types, "unsigned") {
+			return "uint32"
+		} else {
+			return "int32"
+		}
+	}
+	if strings.Contains(strings.ToLower(types), "datetime") {
+		if nullable {
+			return "sql.NullTime"
+		}
 		return "time.Time"
+	}
+	if nullable {
+		return "sql.NullString"
 	}
 	return "string"
 }
