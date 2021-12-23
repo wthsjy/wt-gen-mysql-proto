@@ -16,6 +16,10 @@ type DDLM struct {
 	Key     string
 	Comment string
 }
+type TableStatus struct {
+	Name    string
+	Comment string
+}
 
 var (
 	err       error
@@ -46,6 +50,12 @@ func main() {
 		panic(err)
 	}
 
+	tableStatus := &TableStatus{}
+	err = mDB.Raw(fmt.Sprintf("show table status like '%s'", tableName)).First(&tableStatus).Error
+	if err != nil {
+		panic(err)
+	}
+
 	err = mDB.Raw(fmt.Sprintf("SHOW FULL FIELDS FROM  %s", tableName)).Find(&ddlms).Error
 	if err != nil {
 		panic(err)
@@ -53,11 +63,11 @@ func main() {
 
 	var fields []string
 	var priKeyField string
-	structStr := fmt.Sprintf("package dbmodel\n\n// %s mysql database.table: %s.%s\ntype %s struct{\n", FirstUpCase(CamelCase(tableName)), dbName, tableName, FirstUpCase(CamelCase(tableName)))
+	structStr := fmt.Sprintf("package dbmodel\n\n// %s %s mysql database.table: %s.%s\ntype %s struct {\n", FirstUpCase(CamelCase(tableName)), tableStatus.Comment, dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	protoStr := "syntax = \"proto3\";\n\n"
 	protoStr += "package dodo.go.pbgen.service.model;\n"
 	protoStr += "option go_package = \"dodo-go/pbgen/service/model;modelpb\";\n\n"
-	protoStr += fmt.Sprintf("// mysql database.table: %s.%s\nmessage %s{\n", dbName, tableName, FirstUpCase(CamelCase(tableName)))
+	protoStr += fmt.Sprintf("//  %s mysql database.table: %s.%s\nmessage %s{\n", tableStatus.Comment, dbName, tableName, FirstUpCase(CamelCase(tableName)))
 	for index, v := range ddlms {
 		fields = append(fields, fmt.Sprintf("`%s`", v.Field))
 		if strings.ToUpper(v.Key) == "PRI" {
@@ -70,19 +80,19 @@ func main() {
 		protoStr += fmt.Sprintf("  %s %s = %d;\n", getProtoType(v.Type), CamelCase(v.Field), index+1)
 
 		if strings.TrimSpace(v.Comment) != "" {
-			structStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
+			structStr += fmt.Sprintf("	// %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
 		}
-		structStr += fmt.Sprintf("  %s %s  ", FirstUpCase(CamelCase(v.Field)), getStructType(v))
+		structStr += fmt.Sprintf("	%s %s ", FirstUpCase(CamelCase(v.Field)), getStructType(v))
 		structStr += fmt.Sprintf("`json:\"%s\" gorm:\"column:%s\"`\n", CamelCase(v.Field), v.Field)
 	}
 
 	protoStr += "}"
 
 	structStr += "}\n\n"
-	structStr += "const(\n"
-	structStr += fmt.Sprintf("  sqlAdd%s =\"insert into `%s`(%s)values(%s)\"\n", FirstUpCase(CamelCase(tableName)), tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
-	structStr += fmt.Sprintf("  sqlDel%sByIds =\"delete from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), tableName, priKeyField)
-	structStr += fmt.Sprintf("  sqlGet%sByIds =\"select %s from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), strings.Join(fields, ","), tableName, priKeyField)
+	structStr += "const (\n"
+	structStr += fmt.Sprintf("	sqlAdd%s = \"insert into `%s`(%s)values(%s)\"\n", FirstUpCase(CamelCase(tableName)), tableName, strings.Join(fields, ","), strings.Join(strings.Split(strings.Repeat("?", len(fields)), ""), ","))
+	structStr += fmt.Sprintf("	sqlDel%sByIds = \"delete from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), tableName, priKeyField)
+	structStr += fmt.Sprintf("	sqlGet%sByIds = \"select %s from `%s` where `%s` in ?\"\n", FirstUpCase(CamelCase(tableName)), strings.Join(fields, ","), tableName, priKeyField)
 	structStr += ")"
 
 	protoFileName := fmt.Sprintf("./%s.model.proto", tableName)
@@ -125,7 +135,7 @@ func getStructType(s DDLM) string {
 	nullable := strings.ToUpper(s.Null) == "YES"
 	if strings.Contains(types, "bigint") {
 		if nullable {
-			return "sql.NullInt64"
+			return "sqlnull2json.NullInt64"
 		}
 		if strings.Contains(types, "unsigned") {
 			return "uint64"
@@ -136,7 +146,7 @@ func getStructType(s DDLM) string {
 	}
 	if strings.Contains(types, "int") {
 		if nullable {
-			return "sql.NullInt32"
+			return "sqlnull2json.NullInt32"
 		}
 		if strings.Contains(types, "unsigned") {
 			return "uint32"
@@ -146,12 +156,18 @@ func getStructType(s DDLM) string {
 	}
 	if strings.Contains(strings.ToLower(types), "datetime") {
 		if nullable {
-			return "sql.NullTime"
+			return "sqlnull2json.NullTime"
 		}
 		return "time.Time"
 	}
+	if strings.Contains(strings.ToLower(types), "float") {
+		if nullable {
+			return "sqlnull2json.NullFloat64"
+		}
+		return "float64"
+	}
 	if nullable {
-		return "sql.NullString"
+		return "sqlnull2json.NullString"
 	}
 	return "string"
 }
