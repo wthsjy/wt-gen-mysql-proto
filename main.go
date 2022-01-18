@@ -192,17 +192,17 @@ func isASCIILower(c byte) bool {
 	return 'a' <= c && c <= 'z'
 }
 
-func FirstUpCase(s string) string {
-	if len(s) == 0 {
-		return s
+func FirstUpCase(str string) string {
+	if len(str) == 0 {
+		return str
 	}
 
-	if !isASCIILower(s[0]) {
-		return s
+	if !isASCIILower(str[0]) {
+		return str
 	}
-	c := s[0]
+	c := str[0]
 	c -= 'a' - 'A'
-	b := []byte(s)
+	b := []byte(str)
 	b[0] = c
 	return string(b)
 }
