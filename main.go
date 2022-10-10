@@ -63,25 +63,16 @@ func main() {
 	}
 
 	var fields []string
-	//var priKeyField string
+	var priKeyField string
 	structStr := fmt.Sprintf("package dbmodel\n\n// %s %s mysql database.table: %s.%s\ntype %s struct {\n", FirstUpCase(CamelCase(tableName)), tableStatus.Comment, dbName, tableName, FirstUpCase(CamelCase(tableName)))
-	protoStr := "syntax = \"proto3\";\n\n"
-	protoStr += "package dodo.go.pbgen.service.model;\n"
-	protoStr += "option go_package = \"dodo-go/pbgen/service/model;modelpb\";\n\n"
-	protoStr += fmt.Sprintf("//  %s mysql database.table: %s.%s\nmessage %s{\n", tableStatus.Comment, dbName, tableName, FirstUpCase(CamelCase(tableName)))
-	for index, v := range ddlms {
+	for _, v := range ddlms {
 		fields = append(fields, fmt.Sprintf("`%s`", v.Field))
-		if strings.TrimSpace(v.Comment) != "" {
-			protoStr += fmt.Sprintf("  // %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
-		}
-		//protoStr += fmt.Sprintf("  //\n  // table field:\n  // @gotags: gorm:\"column:%s\"\n", v.Field)
-		protoStr += fmt.Sprintf("  %s %s = %d;\n", getProtoType(v.Type), CamelCase(v.Field), index+1)
-
 		if strings.TrimSpace(v.Comment) != "" {
 			structStr += fmt.Sprintf("	// %s\n", strings.ReplaceAll(strings.TrimSpace(v.Comment), "\n", "\n  // "))
 		}
 		structStr += fmt.Sprintf("	%s %s ", FirstUpCase(CamelCase(v.Field)), getStructType(v))
 		if strings.ToUpper(v.Key) == "PRI" {
+			priKeyField = v.Field
 			structStr += fmt.Sprintf("`gorm:\"column:%s;->\"`\n", v.Field)
 		} else if strings.ToUpper(v.Type) == "DATETIME" && strings.ToUpper(v.Default) == "CURRENT_TIMESTAMP" {
 			structStr += fmt.Sprintf("`gorm:\"column:%s;->\"`\n", v.Field)
@@ -91,15 +82,12 @@ func main() {
 
 	}
 
-	protoStr += "}"
-
 	structStr += "}\n\n"
 
-	protoFileName := fmt.Sprintf("./%s.model.proto", tableName)
-	structFileName := fmt.Sprintf("./%s.model.go", tableName)
-	_ = ioutil.WriteFile(protoFileName, []byte(protoStr), 0666)
+	structStr += fmt.Sprintf("// \"select %s from %s where %s=?\"", strings.Join(fields, ","), tableName, priKeyField)
+
+	structFileName := fmt.Sprintf("./%s.go", tableName)
 	_ = ioutil.WriteFile(structFileName, []byte(structStr), 0666)
-	fmt.Println("proto:", protoFileName)
 	fmt.Println("struct:", structFileName)
 }
 
